@@ -173,16 +173,16 @@ export class RgthreeBaseNode extends LGraphNode {
         KEY_EVENT_SERVICE.handleKeyDownOrUp(event);
     }
     getExtraMenuOptions(canvas, options) {
-        var _a, _b, _c, _d, _e;
-        super.getExtraMenuOptions.apply(this, [canvas, options]);
-        if ((_b = (_a = this.constructor.nodeType) === null || _a === void 0 ? void 0 : _a.prototype) === null || _b === void 0 ? void 0 : _b.getExtraMenuOptions) {
-            (_e = (_d = (_c = this.constructor.nodeType) === null || _c === void 0 ? void 0 : _c.prototype) === null || _d === void 0 ? void 0 : _d.getExtraMenuOptions) === null || _e === void 0 ? void 0 : _e.apply(this, [canvas, options]);
-        }
+        var _a, _b, _c;
+        const parentGetExtraMenuOptions = (_a = Object.getPrototypeOf(RgthreeBaseNode.prototype)) === null || _a === void 0 ? void 0 : _a.getExtraMenuOptions;
+        parentGetExtraMenuOptions === null || parentGetExtraMenuOptions === void 0 ? void 0 : parentGetExtraMenuOptions.apply(this, [canvas, options]);
+        const nodeTypeGetExtraMenuOptions = (_c = (_b = this.constructor.nodeType) === null || _b === void 0 ? void 0 : _b.prototype) === null || _c === void 0 ? void 0 : _c.getExtraMenuOptions;
+        nodeTypeGetExtraMenuOptions === null || nodeTypeGetExtraMenuOptions === void 0 ? void 0 : nodeTypeGetExtraMenuOptions.apply(this, [canvas, options]);
         const help = this.getHelp() || this.constructor.help;
         if (help) {
             addHelpMenuItem(this, help, options);
         }
-        return [];
+        return options;
     }
 }
 RgthreeBaseNode.exposedActions = [];

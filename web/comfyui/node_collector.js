@@ -35,7 +35,7 @@ class CombinerNode extends CollectorNode {
                     updateCombinerToCollector(this);
                 },
             });
-            return [];
+            return options;
         };
     }
     configure(info) {

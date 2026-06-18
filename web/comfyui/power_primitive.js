@@ -56,7 +56,7 @@ class RgthreePowerPrimitive extends RgthreeBaseServerNode {
             },
         ];
         options.splice(0, 0, ...menuItems, null);
-        return [];
+        return options;
     }
     addInitialWidgets() {
         if (!this.outputTypeWidget) {

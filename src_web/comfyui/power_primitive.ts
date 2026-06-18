@@ -109,7 +109,7 @@ class RgthreePowerPrimitive extends RgthreeBaseServerNode {
     ];
 
     options.splice(0, 0, ...menuItems, null);
-    return [];
+    return options;
   }
 
   private addInitialWidgets() {

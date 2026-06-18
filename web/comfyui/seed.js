@@ -108,7 +108,7 @@ class RgthreeSeed extends RgthreeBaseServerNode {
                 }
             },
         });
-        return [];
+        return options;
     }
     addLastSeedValue() {
         if (this.lastSeedValue)
