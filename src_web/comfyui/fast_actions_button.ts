@@ -122,7 +122,7 @@ class FastActionsButton extends BaseAnyInputConnectedNode {
     window.removeEventListener("keyup", this.keyupBound);
   }
 
-  async onKeypress(event: KeyboardEvent) {
+  async onKeypress(event: KeyboardEvent): Promise<void> {
     const target = (event.target as HTMLElement)!;
     if (
       this.executingFromShortcut ||
@@ -148,7 +148,7 @@ class FastActionsButton extends BaseAnyInputConnectedNode {
         event.preventDefault();
         event.stopImmediatePropagation();
         app.canvas.dirty_canvas = true;
-        return false;
+        return;
       }
     }
     return;

@@ -47,7 +47,7 @@ app.registerExtension({
         const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
         nodeType.prototype.getExtraMenuOptions = function (canvas, options) {
             var _a;
-            const extraOptions = (_a = getExtraMenuOptions === null || getExtraMenuOptions === void 0 ? void 0 : getExtraMenuOptions.call(this, canvas, options)) !== null && _a !== void 0 ? _a : [];
+            const extraOptions = ((_a = getExtraMenuOptions === null || getExtraMenuOptions === void 0 ? void 0 : getExtraMenuOptions.call(this, canvas, options)) !== null && _a !== void 0 ? _a : []);
             showQueueNodesMenuIfOutputNodesAreSelected(options);
             showQueueGroupNodesMenuIfGroupIsSelected(options);
             return extraOptions;

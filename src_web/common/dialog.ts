@@ -39,7 +39,7 @@ export class RgthreeDialog extends EventTarget {
       child: container,
       parent: document.body,
       events: {
-        click: (event: MouseEvent) => {
+        click: (event: MouseEvent): void => {
           // Close the dialog if we've clicked outside of our container. The dialog modal will
           // report itself as the dialog itself, so we use the inner container div (and CSS to
           // remove default padding from the dialog element).
@@ -50,7 +50,8 @@ export class RgthreeDialog extends EventTarget {
           ) {
             return;
           }
-          return this.close();
+          this.close();
+          return;
         },
       },
     });

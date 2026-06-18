@@ -10,7 +10,7 @@ function getFromPngBuffer(buffer) {
     const dataView = new DataView(pngData.buffer);
     if (dataView.getUint32(0) !== 0x89504e47) {
         console.error('Not a valid PNG file');
-        return;
+        return undefined;
     }
     let offset = 8;
     let txt_chunks = {};

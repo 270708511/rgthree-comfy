@@ -80,7 +80,7 @@ class FastActionsButton extends BaseAnyInputConnectedNode {
                 event.preventDefault();
                 event.stopImmediatePropagation();
                 app.canvas.dirty_canvas = true;
-                return false;
+                return;
             }
         }
         return;

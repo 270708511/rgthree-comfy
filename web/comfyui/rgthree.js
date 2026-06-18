@@ -45,6 +45,11 @@ const LogLevelToCSS = {
     [LogLevel.DEV]: "color: #004b68;",
 };
 let GLOBAL_LOG_LEVEL = LogLevel.ERROR;
+function isVueNodesEnabled() {
+    var _a, _b, _c, _d, _e, _f;
+    const settings = (_a = app === null || app === void 0 ? void 0 : app.ui) === null || _a === void 0 ? void 0 : _a.settings;
+    return Boolean((_e = (_c = (_b = settings === null || settings === void 0 ? void 0 : settings.getSettingValue) === null || _b === void 0 ? void 0 : _b.call(settings, "Comfy.VueNodes.Enabled")) !== null && _c !== void 0 ? _c : (_d = settings === null || settings === void 0 ? void 0 : settings.get) === null || _d === void 0 ? void 0 : _d.call(settings, "Comfy.VueNodes.Enabled")) !== null && _e !== void 0 ? _e : (_f = settings === null || settings === void 0 ? void 0 : settings.values) === null || _f === void 0 ? void 0 : _f["Comfy.VueNodes.Enabled"]);
+}
 const apiURL = api.apiURL;
 api.apiURL = function (route) {
     if (route.includes("rgthree/")) {
@@ -275,6 +280,9 @@ class Rgthree extends EventTarget {
         LGraphCanvas.onGroupAdd = function (...args) {
             const graph = app.canvas.getCurrentGraph();
             onGroupAdd.apply(this, [...args]);
+            if (isVueNodesEnabled()) {
+                return;
+            }
             LGraphCanvas.onShowPropertyEditor({}, null, null, null, graph._groups[graph._groups.length - 1]);
         };
     }

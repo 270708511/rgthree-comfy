@@ -40,13 +40,13 @@ type ShadowInputData = {
  * The Context Switch  node.
  */
 class DynamicContextSwitchNode extends DynamicContextNodeBase {
-  static override title = NodeTypesString.DYNAMIC_CONTEXT_SWITCH;
-  static override type = NodeTypesString.DYNAMIC_CONTEXT_SWITCH;
+  static title = NodeTypesString.DYNAMIC_CONTEXT_SWITCH;
+  static type = NodeTypesString.DYNAMIC_CONTEXT_SWITCH;
   static comfyClass = NodeTypesString.DYNAMIC_CONTEXT_SWITCH;
 
-  protected override readonly hasShadowInputs = true;
+  protected readonly hasShadowInputs = true;
 
-  // override hasShadowInputs = true;
+  // hasShadowInputs = true;
 
   /**
    * We should be able to assume that `lastInputsList` is the input list after the last, major
@@ -64,14 +64,14 @@ class DynamicContextSwitchNode extends DynamicContextNodeBase {
     super(title);
   }
 
-  override getContextInputsList() {
+  getContextInputsList() {
     return this.shadowInputs;
   }
-  override handleUpstreamMutation(mutation: InputMutation) {
+  handleUpstreamMutation(mutation: InputMutation) {
     this.scheduleHardRefresh();
   }
 
-  override onConnectionsChange(
+  onConnectionsChange(
     type: ISlotType,
     slotIndex: number,
     isConnected: boolean,
@@ -93,7 +93,7 @@ class DynamicContextSwitchNode extends DynamicContextNodeBase {
     }, ms);
   }
 
-  override onNodeCreated() {
+  onNodeCreated() {
     this.addInput("ctx_1", "RGTHREE_DYNAMIC_CONTEXT");
     this.addInput("ctx_2", "RGTHREE_DYNAMIC_CONTEXT");
     this.addInput("ctx_3", "RGTHREE_DYNAMIC_CONTEXT");
@@ -102,7 +102,7 @@ class DynamicContextSwitchNode extends DynamicContextNodeBase {
     super.onNodeCreated();
   }
 
-  override addContextInput(name: string, type: string, slot?: number): void {}
+  addContextInput(name: string, type: string, slot?: number): void {}
 
   /**
    * This is a "hard" refresh of the list, but looping over the actual context inputs, and
@@ -173,7 +173,7 @@ class DynamicContextSwitchNode extends DynamicContextNodeBase {
     this.fixInputsOutputsLinkSlots();
   }
 
-  override onDrawForeground(ctx: CanvasRenderingContext2D, canvas: LGraphCanvas): void {
+  onDrawForeground(ctx: CanvasRenderingContext2D, canvas: LGraphCanvas): void {
     const low_quality = (canvas?.ds?.scale ?? 1) < 0.6;
     if (low_quality || this.size[0] <= 10) {
       return;

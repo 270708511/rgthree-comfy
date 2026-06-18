@@ -15,7 +15,8 @@ export class RgthreeDialog extends EventTarget {
                         getClosestOrSelf(event.target, `.rgthree-dialog-container`) === container) {
                         return;
                     }
-                    return this.close();
+                    this.close();
+                    return;
                 },
             },
         });

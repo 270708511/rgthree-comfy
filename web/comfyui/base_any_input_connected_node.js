@@ -135,9 +135,7 @@ export class BaseAnyInputConnectedNode extends RgthreeBaseVirtualNode {
     }
     onConnectOutput(outputIndex, inputType, inputSlot, inputNode, inputIndex) {
         let canConnect = true;
-        if (super.onConnectOutput) {
-            canConnect = super.onConnectOutput(outputIndex, inputType, inputSlot, inputNode, inputIndex);
-        }
+        canConnect = super.onConnectOutput(outputIndex, inputType, inputSlot, inputNode, inputIndex);
         if (canConnect) {
             const nodes = getConnectedInputNodes(this);
             if (nodes.includes(inputNode)) {
@@ -152,9 +150,7 @@ export class BaseAnyInputConnectedNode extends RgthreeBaseVirtualNode {
     }
     onConnectInput(inputIndex, outputType, outputSlot, outputNode, outputIndex) {
         let canConnect = true;
-        if (super.onConnectInput) {
-            canConnect = super.onConnectInput(inputIndex, outputType, outputSlot, outputNode, outputIndex);
-        }
+        canConnect = super.onConnectInput(inputIndex, outputType, outputSlot, outputNode, outputIndex);
         if (canConnect) {
             const nodes = getConnectedOutputNodes(this);
             if (nodes.includes(outputNode)) {

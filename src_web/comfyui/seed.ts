@@ -36,15 +36,15 @@ interface SeedSerializedCtx {
 }
 
 class RgthreeSeed extends RgthreeBaseServerNode {
-  static override title = NodeTypesString.SEED;
-  static override type = NodeTypesString.SEED;
+  static title = NodeTypesString.SEED;
+  static type = NodeTypesString.SEED;
   static comfyClass = NodeTypesString.SEED;
 
-  override serialize_widgets = true;
+  serialize_widgets = true;
 
   private logger = rgthree.newLogSession(`[Seed]`);
 
-  static override exposedActions = ["Randomize Each Time", "Use Last Queued Seed"];
+  static exposedActions = ["Randomize Each Time", "Use Last Queued Seed"];
 
   static "@randomMax" = {type: "number"};
   static "@randomMin" = {type: "number"};
@@ -75,7 +75,7 @@ class RgthreeSeed extends RgthreeBaseServerNode {
     console.log("SEED NODE STARTED!");
   }
 
-  override onPropertyChanged(prop: string, value: unknown, prevValue?: unknown): boolean {
+  onPropertyChanged(prop: string, value: unknown, prevValue?: unknown): boolean {
     if (prop === "randomMax") {
       this.properties["randomMax"] = Math.min(1125899906842624, Number(value as number));
     } else if (prop === "randomMin") {
@@ -84,7 +84,7 @@ class RgthreeSeed extends RgthreeBaseServerNode {
     return true;
   }
 
-  override onRemoved() {
+  onRemoved() {
     console.log("SEED NODE onRemoved!");
     rgthree.removeEventListener(
       "comfy-api-queue-prompt-before",
@@ -92,18 +92,18 @@ class RgthreeSeed extends RgthreeBaseServerNode {
     );
   }
 
-  override onExecuted(output: any): void {
+  onExecuted(output: any): void {
     console.log(`SEED ON EXECUTED. #${this.id}.`, output);
   }
 
-  override configure(info: ISerialisedNode): void {
+  configure(info: ISerialisedNode): void {
     super.configure(info);
     if (this.properties?.["showLastSeed"]) {
       this.addLastSeedValue();
     }
   }
 
-  override async handleAction(action: string) {
+  async handleAction(action: string) {
     if (action === "Randomize Each Time") {
       this.seedWidget.value = SPECIAL_SEED_RANDOM;
     } else if (action === "Use Last Queued Seed") {
@@ -113,7 +113,7 @@ class RgthreeSeed extends RgthreeBaseServerNode {
     }
   }
 
-  override onNodeCreated() {
+  onNodeCreated() {
     super.onNodeCreated?.();
     // Grab the already available widgets, and remove the built-in control_after_generate
     for (const [i, w] of this.widgets.entries()) {
@@ -184,7 +184,7 @@ class RgthreeSeed extends RgthreeBaseServerNode {
     return seed;
   }
 
-  override getExtraMenuOptions(canvas: LGraphCanvas, options: IContextMenuValue[]) {
+  getExtraMenuOptions(canvas: LGraphCanvas, options: IContextMenuValue[]) {
     super.getExtraMenuOptions?.apply(this, [...arguments] as any);
     options.splice(options.length - 1, 0, {
       content: "Show/Hide Last Seed Value",
@@ -309,11 +309,11 @@ class RgthreeSeed extends RgthreeBaseServerNode {
     return seedToUse ?? inputSeed;
   }
 
-  static override setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
+  static setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
     RgthreeBaseServerNode.registerForOverride(comfyClass, nodeData, RgthreeSeed);
   }
 
-  static override onRegisteredForOverride(comfyClass: any, ctxClass: any) {
+  static onRegisteredForOverride(comfyClass: any, ctxClass: any) {
     addConnectionLayoutSupport(RgthreeSeed, app, [
       ["Left", "Right"],
       ["Right", "Left"],

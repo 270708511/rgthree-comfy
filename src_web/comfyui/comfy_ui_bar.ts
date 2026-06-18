@@ -155,7 +155,7 @@ class RgthreeComfyButtonGroup {
   }
 
   update() {
-    this.element.replaceChildren(...this.buttons.map((b) => b["element"] ?? b));
+    this.element.replaceChildren(...this.buttons.map((b) => (b["element"] ?? b) as Node));
   }
 }
 

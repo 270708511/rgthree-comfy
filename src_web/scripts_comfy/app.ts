@@ -1,4 +1,4 @@
-import {ComfyApp} from "@comfyorg/frontend";
+import type {ComfyApp} from "@comfyorg/frontend";
 
 /**
  * A dummy ComfyApp that we can import from our code, which we'll rewrite later to the comfyui

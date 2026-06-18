@@ -51,11 +51,11 @@ const PROP_VALUE_SHOW_STRENGTHS_SEPARATE = "Separate Model & Clip";
  * in an ultra-condensed node allowing fast toggling, and advanced strength setting.
  */
 class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
-  static override title = NodeTypesString.POWER_LORA_LOADER;
-  static override type = NodeTypesString.POWER_LORA_LOADER;
+  static title = NodeTypesString.POWER_LORA_LOADER;
+  static type = NodeTypesString.POWER_LORA_LOADER;
   static comfyClass = NodeTypesString.POWER_LORA_LOADER;
 
-  override serialize_widgets = true;
+  serialize_widgets = true;
 
   private logger = rgthree.newLogSession(`[Power Lora Stack]`);
 
@@ -122,7 +122,7 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
    * added in `onNodeCreated`, letting `super.configure` and do nothing, then create our lora
    * widgets and, finally, add back in our default widgets.
    */
-  override configure(
+  configure(
     info: ISerialisedNode | {widgets_values: ISerialisedNode["widgets_values"]},
   ): void {
     while (this.widgets?.length) this.removeWidget(0);
@@ -150,7 +150,7 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
    * Adds the non-lora widgets. If we'll be configured then we remove them and add them back, so
    * this is really only for newly created nodes in the current session.
    */
-  override onNodeCreated() {
+  onNodeCreated() {
     super.onNodeCreated?.();
     this.addNonLoraWidgets();
     const computed = this.computeSize();
@@ -266,7 +266,7 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
    * so we need to supply that property (and set it to what we want our title). Otherwise, this
    * should be pretty clean.
    */
-  override getSlotInPosition(canvasX: number, canvasY: number): any {
+  getSlotInPosition(canvasX: number, canvasY: number): any {
     const slot = super.getSlotInPosition(canvasX, canvasY);
     // No slot, let's see if it's a widget.
     if (!slot) {
@@ -292,7 +292,7 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
    * Working with the overridden `getSlotInPosition` above, this method checks if the passed in
    * option is actually a widget from it and then hijacks the context menu all together.
    */
-  override getSlotMenuOptions(slot: IFoundSlot) {
+  getSlotMenuOptions(slot: IFoundSlot) {
     // Oddly, LiteGraph doesn't call back into our node with a custom menu (even though it let's us
     // define a custom menu to begin with... wtf?). So, we'll return null so the default is not
     // triggered and then we'll just show one ourselves because.. yea.
@@ -351,7 +351,7 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
   /**
    * When `refreshComboInNode` is called from ComfyUI, then we'll kick off a fresh loras fetch.
    */
-  override refreshComboInNode(defs: any) {
+  refreshComboInNode(defs: any) {
     rgthreeApi.getLoras(true);
   }
 
@@ -395,11 +395,11 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
     }
   }
 
-  static override setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
+  static setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
     RgthreeBaseServerNode.registerForOverride(comfyClass, nodeData, NODE_CLASS);
   }
 
-  static override onRegisteredForOverride(comfyClass: any, ctxClass: any) {
+  static onRegisteredForOverride(comfyClass: any, ctxClass: any) {
     addConnectionLayoutSupport(NODE_CLASS, app, [
       ["Left", "Right"],
       ["Right", "Left"],
@@ -409,7 +409,7 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
     });
   }
 
-  override getHelp() {
+  getHelp() {
     return `
       <p>
         The ${this.type!.replace("(rgthree)", "")} is a powerful node that condenses 100s of pixels
@@ -447,10 +447,10 @@ class RgthreePowerLoraLoader extends RgthreeBaseServerNode {
  * (more necessary for the double model & clip strengths to label them).
  */
 class PowerLoraLoaderHeaderWidget extends RgthreeBaseWidget<{type: string}> {
-  override value = {type: "PowerLoraLoaderHeaderWidget"};
-  override readonly type = "custom";
+  value = {type: "PowerLoraLoaderHeaderWidget"};
+  readonly type = "custom";
 
-  protected override hitAreas: RgthreeBaseHitAreas<"toggle"> = {
+  protected hitAreas: RgthreeBaseHitAreas<"toggle"> = {
     toggle: {bounds: [0, 0] as Vector2, onDown: this.onToggleDown},
   };
 
@@ -538,7 +538,7 @@ type PowerLoraLoaderWidgetValue = {
  * The PowerLoaderWidget that combines several custom drawing and functionality in a single row.
  */
 class PowerLoraLoaderWidget extends RgthreeBaseWidget<PowerLoraLoaderWidgetValue> {
-  override readonly type = "custom";
+  readonly type = "custom";
 
   /** Whether the strength has changed with mouse move (to cancel mouse up). */
   private haveMouseMovedStrength = false;
@@ -547,7 +547,7 @@ class PowerLoraLoaderWidget extends RgthreeBaseWidget<PowerLoraLoaderWidgetValue
 
   private showModelAndClip: boolean | null = null;
 
-  protected override hitAreas: RgthreeBaseHitAreas<
+  protected hitAreas: RgthreeBaseHitAreas<
     | "toggle"
     | "lora"
     | "info"
@@ -759,7 +759,7 @@ class PowerLoraLoaderWidget extends RgthreeBaseWidget<PowerLoraLoaderWidgetValue
     ctx.restore();
   }
 
-  override serializeValue(
+  serializeValue(
     node: TLGraphNode,
     index: number,
   ): PowerLoraLoaderWidgetValue | Promise<PowerLoraLoaderWidgetValue> {
@@ -838,7 +838,7 @@ class PowerLoraLoaderWidget extends RgthreeBaseWidget<PowerLoraLoaderWidgetValue
     canvas.prompt("Value", this.value[prop], (v: string) => (this.value[prop] = Number(v)), event);
   }
 
-  override onMouseUp(event: CanvasPointerEvent, pos: Vector2, node: TLGraphNode): boolean | void {
+  onMouseUp(event: CanvasPointerEvent, pos: Vector2, node: TLGraphNode): boolean | void {
     super.onMouseUp(event, pos, node);
     this.haveMouseMovedStrength = false;
   }

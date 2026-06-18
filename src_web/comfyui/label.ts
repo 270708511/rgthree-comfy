@@ -17,9 +17,9 @@ import {rgthree} from "./rgthree.js";
  * the properties panel (because ComfyUI let's you shift + enter there, only).
  */
 export class Label extends RgthreeBaseVirtualNode {
-  static override type = NodeTypesString.LABEL;
-  static override title = NodeTypesString.LABEL;
-  override comfyClass = NodeTypesString.LABEL;
+  static type = NodeTypesString.LABEL;
+  static title = NodeTypesString.LABEL;
+  comfyClass = NodeTypesString.LABEL;
 
   static readonly title_mode = LiteGraph.NO_TITLE;
   static collapsable = false;
@@ -33,7 +33,7 @@ export class Label extends RgthreeBaseVirtualNode {
   static "@borderRadius" = {type: "number"};
   static "@angle" = {type: "number"};
 
-  override properties!: RgthreeBaseVirtualNode["properties"] & {
+  properties!: RgthreeBaseVirtualNode["properties"] & {
     fontSize: number;
     fontFamily: string;
     fontColor: string;
@@ -44,7 +44,7 @@ export class Label extends RgthreeBaseVirtualNode {
     angle: number;
   };
 
-  override resizable = false;
+  resizable = false;
 
   constructor(title = Label.title) {
     super(title);
@@ -119,23 +119,23 @@ export class Label extends RgthreeBaseVirtualNode {
     ctx.restore();
   }
 
-  override onDblClick(event: CanvasMouseEvent, pos: Vector2, canvas: TLGraphCanvas) {
+  onDblClick(event: CanvasMouseEvent, pos: Vector2, canvas: TLGraphCanvas) {
     // Since everything we can do here is in the properties, let's pop open the properties panel.
     LGraphCanvas.active_canvas.showShowNodePanel(this);
   }
 
-  override onShowCustomPanelInfo(panel: HTMLElement) {
+  onShowCustomPanelInfo(panel: HTMLElement) {
     panel.querySelector('div.property[data-property="Mode"]')?.remove();
     panel.querySelector('div.property[data-property="Color"]')?.remove();
   }
 
-  override inResizeCorner(x: number, y: number) {
+  inResizeCorner(x: number, y: number) {
     // A little ridiculous there's both a resizable property and this method separately to draw the
     // resize icon...
     return this.resizable;
   }
 
-  override getHelp() {
+  getHelp() {
     return `
       <p>
         The rgthree-comfy ${this.type!.replace("(rgthree)", "")} node allows you to add a floating
@@ -174,7 +174,7 @@ export class Label extends RgthreeBaseVirtualNode {
 }
 
 /**
- * We override the drawNode to see if we're drawing our label and, if so, hijack it so we can draw
+ * We the drawNode to see if we're drawing our label and, if so, hijack it so we can draw
  * it like we want. We also do call out to oldDrawNode, which takes care of very minimal things,
  * like a select box.
  */
@@ -195,7 +195,7 @@ LGraphCanvas.prototype.drawNode = function (node: LGraphNode, ctx: CanvasRenderi
 };
 
 /**
- * We override LGraph getNodeOnPos to see if we're being called while also processing a mouse down
+ * We LGraph getNodeOnPos to see if we're being called while also processing a mouse down
  * and, if so, filter out any label nodes on labels that are pinned. This makes the click go
  * "through" the label. We still allow right clicking (so you can unpin) and double click for the
  * properties panel, though that takes two double clicks (one to select, one to actually double

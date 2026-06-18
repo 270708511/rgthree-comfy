@@ -395,9 +395,9 @@ const SERVICE = new RerouteService();
  * The famous ReroutNode, that has true multidirectional, expansive sizes, etc.
  */
 class RerouteNode extends RgthreeBaseVirtualNode {
-  static override title = NodeTypesString.REROUTE;
-  static override type = NodeTypesString.REROUTE;
-  override comfyClass = NodeTypesString.REROUTE;
+  static title = NodeTypesString.REROUTE;
+  static type = NodeTypesString.REROUTE;
+  comfyClass = NodeTypesString.REROUTE;
 
   static readonly title_mode = LiteGraph.NO_TITLE;
 
@@ -405,7 +405,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
   static layout_slot_offset = 5;
   static size: Vector2 = configDefaultSize; // Starting size, read from within litegraph.core
 
-  override isVirtualNode = true;
+  isVirtualNode = true;
   readonly hideSlotLabels = true;
 
   private schedulePromise: Promise<void> | null = null;
@@ -438,7 +438,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
     this.onConstructed();
   }
 
-  override onConstructed(): boolean {
+  onConstructed(): boolean {
     this.setResizable(!!(this.properties["resizable"] ?? configResizable));
     this.size = RerouteNode.size; // Starting size.
     this.addInput("", "*");
@@ -447,7 +447,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
     return super.onConstructed();
   }
 
-  override configure(info: ISerialisedNode): void {
+  configure(info: ISerialisedNode): void {
     if (info.inputs?.length) {
       info.inputs.length = 1;
     }
@@ -463,7 +463,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
     this.resizable = this.properties["resizable"];
   }
 
-  override clone() {
+  clone() {
     const cloned = super.clone()!;
     cloned.inputs[0]!.type = "*";
     cloned.outputs[0]!.type = "*";
@@ -473,7 +473,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
   /**
    * Copied a good bunch of this from the original reroute included with comfy.
    */
-  override onConnectionsChange(
+  onConnectionsChange(
     type: number,
     _slotIndex: number,
     connected: boolean,
@@ -502,7 +502,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
     this.scheduleStabilize();
   }
 
-  override onDrawForeground(ctx: CanvasRenderingContext2D, canvas: TLGraphCanvas): void {
+  onDrawForeground(ctx: CanvasRenderingContext2D, canvas: TLGraphCanvas): void {
     if (this.properties?.["showLabel"]) {
       // ComfyUI seemed to break us again, but couldn't repro. No reason to not check, I guess.
       // https://github.com/rgthree/rgthree-comfy/issues/71
@@ -531,24 +531,24 @@ class RerouteNode extends RgthreeBaseVirtualNode {
   }
 
   /** Finds the input slot; since we only ever have one, this is always 0. */
-  override findInputSlot<TReturn extends false>(name: string, returnObj?: TReturn): number;
-  override findInputSlot<TReturn extends true>(name: string, returnObj?: TReturn): INodeInputSlot;
-  override findInputSlot(name: string, returnObj: boolean = false): number | INodeInputSlot {
+  findInputSlot<TReturn extends false>(name: string, returnObj?: TReturn): number;
+  findInputSlot<TReturn extends true>(name: string, returnObj?: TReturn): INodeInputSlot;
+  findInputSlot(name: string, returnObj: boolean = false): number | INodeInputSlot {
     return returnObj ? this.inputs[0]! : 0;
   }
 
   /** Finds the output slot; since we only ever have one, this is always 0. */
-  override findOutputSlot<TReturn extends false>(name: string, returnObj?: TReturn): number;
-  override findOutputSlot<TReturn extends true>(name: string, returnObj?: TReturn): INodeOutputSlot;
-  override findOutputSlot(name: unknown, returnObj?: unknown): number | INodeOutputSlot {
+  findOutputSlot<TReturn extends false>(name: string, returnObj?: TReturn): number;
+  findOutputSlot<TReturn extends true>(name: string, returnObj?: TReturn): INodeOutputSlot;
+  findOutputSlot(name: unknown, returnObj?: unknown): number | INodeOutputSlot {
     return returnObj ? this.outputs[0]! : 0;
   }
 
-  override disconnectOutput(slot: string | number, targetNode?: TLGraphNode | undefined): boolean {
+  disconnectOutput(slot: string | number, targetNode?: TLGraphNode | undefined): boolean {
     return super.disconnectOutput(slot, targetNode);
   }
 
-  override disconnectInput(slot: string | number): boolean {
+  disconnectInput(slot: string | number): boolean {
     // [🤮] ComfyUI's reroute nodes will disconnect our input if it doesn't yet match (ours being
     // "*" and it's being a type. This mostly happens if we're converting reroutes to rgthree
     // reroutes, the old reroute does a check and calls disconnectInput. Luckily, we can be smarter
@@ -782,7 +782,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
   /**
    * When called, sets the node size, and the properties size, and calls out to `stabilizeLayout`.
    */
-  override setSize(size: Vector2): void {
+  setSize(size: Vector2): void {
     const oldSize = [...this.size] as Size;
     const newSize = [...size] as Size;
     super.setSize(newSize);
@@ -964,7 +964,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
    * when they start (otherwise onMouseMove only fires when the mouse moves within the node's
    * bounds).
    */
-  override onMouseMove(event: PointerEvent): void {
+  onMouseMove(event: PointerEvent): void {
     if (this.shortcuts.move.state) {
       const shortcut = this.shortcuts.move;
       if (shortcut.initialMousePos[0] === -1) {
@@ -996,7 +996,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
    * Handles a key down while this node is selected, starting a shortcut if the keys are newly
    * pressed.
    */
-  override onKeyDown(event: KeyboardEvent) {
+  onKeyDown(event: KeyboardEvent) {
     super.onKeyDown(event);
     const canvas = app.canvas as TLGraphCanvas;
 
@@ -1024,7 +1024,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
   /**
    * Handles a key up while this node is selected, canceling any current shortcut.
    */
-  override onKeyUp(event: KeyboardEvent) {
+  onKeyUp(event: KeyboardEvent) {
     super.onKeyUp(event);
     const canvas = app.canvas as TLGraphCanvas;
 
@@ -1051,7 +1051,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
   /**
    * Handles a deselection of the node, canceling any current shortcut.
    */
-  override onDeselected(): void {
+  onDeselected(): void {
     super.onDeselected?.();
     const canvas = app.canvas as TLGraphCanvas;
     for (const [key, shortcut] of Object.entries(this.shortcuts)) {
@@ -1066,7 +1066,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
     }
   }
 
-  override onRemoved(): void {
+  onRemoved(): void {
     super.onRemoved?.();
     // If we're removed, let's call out to the link dragging above. In a settimeout because this is
     // called as we're removing with further cleanup Litegraph does, and we want the handler to
@@ -1076,7 +1076,7 @@ class RerouteNode extends RgthreeBaseVirtualNode {
     }, 32);
   }
 
-  override getHelp() {
+  getHelp() {
     return `
       <p>
         Finally, a comfortable, powerful reroute node with true multi-direction and powerful

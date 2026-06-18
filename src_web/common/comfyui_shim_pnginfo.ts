@@ -25,7 +25,7 @@ const api = {
 }
 
 
-function getFromPngBuffer(buffer: ArrayBuffer) {
+function getFromPngBuffer(buffer: ArrayBuffer): Record<string, string> | undefined {
   // Get the PNG data as a Uint8Array
   const pngData = new Uint8Array(buffer)
   const dataView = new DataView(pngData.buffer)
@@ -33,7 +33,7 @@ function getFromPngBuffer(buffer: ArrayBuffer) {
   // Check that the PNG signature is present
   if (dataView.getUint32(0) !== 0x89504e47) {
     console.error('Not a valid PNG file')
-    return
+    return undefined
   }
 
   // Start searching for chunks after the PNG signature

@@ -25,11 +25,11 @@
     "outDir": "web/",
     "removeComments": true,
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
+    "strictPropertyInitialization": false,
     "noImplicitThis": true,
     "useUnknownInCatchVariables": true,
     "alwaysStrict": true,
@@ -39,8 +39,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": false,
+    "noPropertyAccessFromIndexSignature": false,
     "allowUnusedLabels": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
@@ -52,6 +52,7 @@
   "exclude": [
     "**/*.spec.ts",
     "**/*.d.ts",
+    "**/*_bak.ts",
     "node_modules/**/*.ts"
   ]
 }

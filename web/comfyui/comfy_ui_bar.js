@@ -121,7 +121,7 @@ class RgthreeComfyButtonGroup {
         return null;
     }
     update() {
-        this.element.replaceChildren(...this.buttons.map((b) => { var _a; return (_a = b["element"]) !== null && _a !== void 0 ? _a : b; }));
+        this.element.replaceChildren(...this.buttons.map((b) => { var _a; return ((_a = b["element"]) !== null && _a !== void 0 ? _a : b); }));
     }
 }
 class RgthreeComfyButton {

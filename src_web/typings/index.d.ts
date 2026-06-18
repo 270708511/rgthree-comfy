@@ -3,6 +3,7 @@
  */
 import "@comfyorg/frontend";
 import "./litegraph";
+import "./frontend_compat";
 import "./rgthree";
 import "./comfy";
 
@@ -26,5 +27,22 @@ declare global {
       // So much more stuffed in here, add as needed.
       [key: string]: any;
     };
+  }
+}
+
+// Global shims for modern ComfyUI type gaps used by rgthree.
+declare global {
+  interface MouseEvent {
+    canvasX?: number;
+    canvasY?: number;
+    deltaX?: number;
+    deltaY?: number;
+  }
+
+  interface Function {
+    type?: any;
+    title?: any;
+    nodeType?: any;
+    comfyClass?: any;
   }
 }

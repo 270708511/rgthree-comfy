@@ -39,7 +39,7 @@ app.registerExtension({
           canvas: LGraphCanvas,
           options: (IContextMenuValue<unknown> | null)[],
         ): (IContextMenuValue<unknown> | null)[] {
-          options = getExtraMenuOptions?.call(this, canvas, options) ?? options;
+          options = (getExtraMenuOptions?.call(this, canvas, options) ?? options) as (IContextMenuValue<unknown> | null)[];
           // If we already have a copy image somehow, then let's skip ours.
           if (this.imgs?.length) {
             let img =
@@ -67,7 +67,7 @@ app.registerExtension({
               }
             }
           }
-          return [];
+          return options;
         };
       }
     }

@@ -36,9 +36,7 @@ export class DynamicContextNode extends DynamicContextNodeBase {
     onConnectInput(inputIndex, outputType, outputSlot, outputNode, outputIndex) {
         var _a;
         let canConnect = true;
-        if (super.onConnectInput) {
-            canConnect = super.onConnectInput.apply(this, [...arguments]);
-        }
+        canConnect = super.onConnectInput.apply(this, [...arguments]);
         if (canConnect &&
             outputNode instanceof DynamicContextNode &&
             outputIndex === 0 &&

@@ -296,9 +296,8 @@ export abstract class RgthreeBaseNode extends LGraphNode {
   ): (IContextMenuValue<unknown> | null)[] {
     // Some other extensions override getExtraMenuOptions on the nodeType as it comes through from
     // the server, so we can call out to that if we don't have our own.
-    if (super.getExtraMenuOptions) {
-      super.getExtraMenuOptions?.apply(this, [canvas, options]);
-    } else if (this.constructor.nodeType?.prototype?.getExtraMenuOptions) {
+    super.getExtraMenuOptions.apply(this, [canvas, options]);
+    if (this.constructor.nodeType?.prototype?.getExtraMenuOptions) {
       this.constructor.nodeType?.prototype?.getExtraMenuOptions?.apply(this, [canvas, options]);
     }
     // If we have help content, then add a menu item.

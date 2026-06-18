@@ -285,7 +285,7 @@ export function getConnectionPosForLayout(
   slotNumber: number,
   out: Vector2,
 ) {
-  out = out || new Float32Array(2);
+  out = (out || new Float32Array(2)) as unknown as Point;
   node.properties = node.properties || {};
   const layout = node.properties["connections_layout"] ||
     (node as any).defaultConnectionsLayout || ["Left", "Right"];
@@ -322,7 +322,7 @@ export function getConnectionPosForLayout(
   const displaySlot = collapseConnections
     ? 0
     : slotNumber -
-      slotList.reduce<number>((count, ioput, index) => {
+      (slotList as any[]).reduce((count: number, ioput: any, index: number) => {
         count += index < slotNumber && ioput.hidden ? 1 : 0;
         return count;
       }, 0);
@@ -1102,7 +1102,7 @@ export function reduceNodesDepthFirst<T>(
     const {node} = stack.pop()!;
     const result = reduceFn(node, reduceTo as T);
     if (result !== undefined && result !== reduceTo) {
-      reduceTo = result;
+      reduceTo = result as T;
     }
 
     // If it's a subgraph and we should expand, add children to stack

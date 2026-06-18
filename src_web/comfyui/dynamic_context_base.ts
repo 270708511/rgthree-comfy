@@ -96,7 +96,7 @@ export class DynamicContextNodeBase extends BaseContextNode {
       return;
     }
   }
-  override clone() {
+  clone() {
     const cloned = super.clone()! as DynamicContextNodeBase;
     while (cloned.inputs.length > 1) {
       cloned.removeInput(cloned.inputs.length - 1);
@@ -114,7 +114,7 @@ export class DynamicContextNodeBase extends BaseContextNode {
    * Adds the basic output_keys widget. Should be called _after_ specific nodes setup their inputs
    * or widgets.
    */
-  override onNodeCreated() {
+  onNodeCreated() {
     const node = this;
     this.addCustomWidget(
       new RgthreeInvisibleWidget("output_keys", "RGTHREE_DYNAMIC_CONTEXT_OUTPUTS", "", () => {
@@ -222,7 +222,7 @@ export class DynamicContextNodeBase extends BaseContextNode {
     }
   }
 
-  static override setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
+  static setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
     RgthreeBaseServerNode.registerForOverride(comfyClass, nodeData, this);
     // [🤮] ComfyUI only adds "required" inputs to the outputs list when dragging an output to
     // empty space, but since RGTHREE_CONTEXT is optional, it doesn't get added to the menu because

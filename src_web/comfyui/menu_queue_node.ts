@@ -74,7 +74,7 @@ app.registerExtension({
       canvas: TLGraphCanvas,
       options: (IContextMenuValue<unknown> | null)[],
     ): (IContextMenuValue<unknown> | null)[] {
-      const extraOptions = getExtraMenuOptions?.call(this, canvas, options) ?? [];
+      const extraOptions = (getExtraMenuOptions?.call(this, canvas, options) ?? []) as (IContextMenuValue<unknown> | null)[];
       showQueueNodesMenuIfOutputNodesAreSelected(options);
       showQueueGroupNodesMenuIfGroupIsSelected(options);
       return extraOptions;

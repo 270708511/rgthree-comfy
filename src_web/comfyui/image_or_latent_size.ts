@@ -6,11 +6,11 @@ import {RgthreeBaseServerNode} from "./base_node.js";
 import {NodeTypesString} from "./constants.js";
 
 class RgthreeImageOrLatentSize extends RgthreeBaseServerNode {
-  static override title = NodeTypesString.IMAGE_OR_LATENT_SIZE;
-  static override type = NodeTypesString.IMAGE_OR_LATENT_SIZE;
+  static title = NodeTypesString.IMAGE_OR_LATENT_SIZE;
+  static type = NodeTypesString.IMAGE_OR_LATENT_SIZE;
   static comfyClass = NodeTypesString.IMAGE_OR_LATENT_SIZE;
 
-  static override setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
+  static setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
     RgthreeBaseServerNode.registerForOverride(comfyClass, nodeData, NODE_CLASS);
   }
 
@@ -18,7 +18,7 @@ class RgthreeImageOrLatentSize extends RgthreeBaseServerNode {
     super(title);
   }
 
-  override onNodeCreated() {
+  onNodeCreated() {
     super.onNodeCreated?.();
 
     // Litegraph uses an array of acceptable input types, even though ComfyUI's types don't type
@@ -26,7 +26,7 @@ class RgthreeImageOrLatentSize extends RgthreeBaseServerNode {
     this.addInput("input", ["IMAGE", "LATENT", "MASK"] as any);
   }
 
-  override configure(info: ISerialisedNode): void {
+  configure(info: ISerialisedNode): void {
     super.configure(info);
 
     if (this.inputs?.length) {

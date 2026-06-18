@@ -151,8 +151,8 @@ class KeyEventService extends EventTarget {
    * Checks if all keys passed in are down.
    */
   areAllKeysDown(keys: string | string[]) {
-    keys = this.getKeysFromShortcut(keys);
-    return keys.every((k) => {
+    const normalizedKeys = this.getKeysFromShortcut(keys);
+    return normalizedKeys.every((k) => {
       return this.downKeys[k];
     });
   }

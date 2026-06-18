@@ -175,7 +175,7 @@ export function setConnectionsCollapse(node, collapseConnections = null) {
 }
 export function getConnectionPosForLayout(node, isInput, slotNumber, out) {
     var _a, _b, _c;
-    out = out || new Float32Array(2);
+    out = (out || new Float32Array(2));
     node.properties = node.properties || {};
     const layout = node.properties["connections_layout"] ||
         node.defaultConnectionsLayout || ["Left", "Right"];

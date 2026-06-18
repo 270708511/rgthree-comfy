@@ -94,8 +94,8 @@ class KeyEventService extends EventTarget {
         return keys.map((k) => k.toLocaleUpperCase());
     }
     areAllKeysDown(keys) {
-        keys = this.getKeysFromShortcut(keys);
-        return keys.every((k) => {
+        const normalizedKeys = this.getKeysFromShortcut(keys);
+        return normalizedKeys.every((k) => {
             return this.downKeys[k];
         });
     }

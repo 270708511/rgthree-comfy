@@ -10,6 +10,7 @@ import type {
 } from "@comfyorg/frontend";
 
 import {app} from "scripts/app.js";
+import {api} from "scripts/api.js";
 import {RgthreeBaseVirtualNode} from "./base_node.js";
 import {NodeTypesString} from "./constants.js";
 import {SERVICE as FAST_GROUPS_SERVICE} from "./services/fast_groups_service.js";

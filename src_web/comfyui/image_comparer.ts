@@ -40,17 +40,17 @@ function imageDataToUrl(data: ComfyImageServerData) {
  * Compares two images in one canvas node.
  */
 export class RgthreeImageComparer extends RgthreeBaseServerNode {
-  static override title = NodeTypesString.IMAGE_COMPARER;
-  static override type = NodeTypesString.IMAGE_COMPARER;
+  static title = NodeTypesString.IMAGE_COMPARER;
+  static type = NodeTypesString.IMAGE_COMPARER;
   static comfyClass = NodeTypesString.IMAGE_COMPARER;
 
   // These is what the core preview image node uses to show the context menu. May not be that helpful
   // since it likely will always be "0" when a context menu is invoked without manually changing
   // something.
-  override imageIndex: number = 0;
-  override imgs: InstanceType<typeof Image>[] = [];
+  imageIndex: number = 0;
+  imgs: InstanceType<typeof Image>[] = [];
 
-  override serialize_widgets = true;
+  serialize_widgets = true;
 
   isPointerDown = false;
   isPointerOver = false;
@@ -68,7 +68,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
     this.properties["comparer_mode"] = "Slide";
   }
 
-  override onExecuted(output: ExecutedPayload | OldExecutedPayload) {
+  onExecuted(output: ExecutedPayload | OldExecutedPayload) {
     super.onExecuted?.(output);
     if ("images" in output) {
       this.canvasWidget!.value = {
@@ -103,7 +103,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
     }
   }
 
-  override onSerialize(serialised: ISerialisedNode) {
+  onSerialize(serialised: ISerialisedNode) {
     super.onSerialize && super.onSerialize(serialised);
     for (let [index, widget_value] of (serialised.widgets_values || []).entries()) {
       if (this.widgets[index]?.name === "rgthree_comparer") {
@@ -118,7 +118,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
     }
   }
 
-  override onNodeCreated() {
+  onNodeCreated() {
     this.canvasWidget = this.addCustomWidget(
       new RgthreeImageComparerWidget("rgthree_comparer", this),
     ) as RgthreeImageComparerWidget;
@@ -145,31 +145,31 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
     }
   }
 
-  override onMouseDown(event: CanvasPointerEvent, pos: Point, canvas: LGraphCanvas): boolean {
+  onMouseDown(event: CanvasPointerEvent, pos: Point, canvas: LGraphCanvas): boolean {
     super.onMouseDown?.(event, pos, canvas);
     this.setIsPointerDown(true);
     return false;
   }
 
-  override onMouseEnter(event: CanvasPointerEvent): void {
+  onMouseEnter(event: CanvasPointerEvent): void {
     super.onMouseEnter?.(event);
     this.setIsPointerDown(!!app.canvas.pointer_is_down);
     this.isPointerOver = true;
   }
 
-  override onMouseLeave(event: CanvasPointerEvent): void {
+  onMouseLeave(event: CanvasPointerEvent): void {
     super.onMouseLeave?.(event);
     this.setIsPointerDown(false);
     this.isPointerOver = false;
   }
 
-  override onMouseMove(event: CanvasPointerEvent, pos: Point, canvas: LGraphCanvas): void {
+  onMouseMove(event: CanvasPointerEvent, pos: Point, canvas: LGraphCanvas): void {
     super.onMouseMove?.(event, pos, canvas);
     this.pointerOverPos = [...pos] as Point;
     this.imageIndex = this.pointerOverPos[0] > this.size[0] / 2 ? 1 : 0;
   }
 
-  override getHelp(): string {
+  getHelp(): string {
     return `
       <p>
         The ${this.type!.replace("(rgthree)", "")} node compares two images on top of each other.
@@ -223,11 +223,11 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
       </ul>`;
   }
 
-  static override setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
+  static setUp(comfyClass: typeof LGraphNode, nodeData: ComfyNodeDef) {
     RgthreeBaseServerNode.registerForOverride(comfyClass, nodeData, RgthreeImageComparer);
   }
 
-  static override onRegisteredForOverride(comfyClass: any) {
+  static onRegisteredForOverride(comfyClass: any) {
     addConnectionLayoutSupport(RgthreeImageComparer, app, [
       ["Left", "Right"],
       ["Right", "Left"],
@@ -243,11 +243,11 @@ type RgthreeImageComparerWidgetValue = {
 };
 
 class RgthreeImageComparerWidget extends RgthreeBaseWidget<RgthreeImageComparerWidgetValue> {
-  override readonly type = "custom";
+  readonly type = "custom";
 
   private node: RgthreeImageComparer;
 
-  protected override hitAreas: RgthreeBaseHitAreas<any> = {
+  protected hitAreas: RgthreeBaseHitAreas<any> = {
     // We dynamically set this when/if we draw the labels.
   };
 
@@ -455,7 +455,7 @@ class RgthreeImageComparerWidget extends RgthreeBaseWidget<RgthreeImageComparerW
     return [width, 20];
   }
 
-  override serializeValue(
+  serializeValue(
     node: LGraphNode,
     index: number,
   ): RgthreeImageComparerWidgetValue | Promise<RgthreeImageComparerWidgetValue> {

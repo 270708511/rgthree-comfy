@@ -72,6 +72,15 @@ const LogLevelToCSS: {[key in LogLevel]: string} = {
 
 let GLOBAL_LOG_LEVEL = LogLevel.ERROR;
 
+function isVueNodesEnabled() {
+  const settings = (app as any)?.ui?.settings;
+  return Boolean(
+    settings?.getSettingValue?.("Comfy.VueNodes.Enabled") ??
+      settings?.get?.("Comfy.VueNodes.Enabled") ??
+      settings?.values?.["Comfy.VueNodes.Enabled"],
+  );
+}
+
 /**
  * At some point in Summer of 2024 ComfyUI broke third-party api calls by assuming api paths follow
  * a certain structure. However, rgthree-comfy wants an `/rgthree/` prefix for that same reason, so
@@ -436,6 +445,9 @@ class Rgthree extends EventTarget {
     LGraphCanvas.onGroupAdd = function (...args: any[]) {
       const graph = app.canvas.getCurrentGraph()!;
       onGroupAdd.apply(this, [...args] as any);
+      if (isVueNodesEnabled()) {
+        return;
+      }
       // [🤮] Bad typing here.. especially the last arg; it is LGraphNode but can really be anything
       // with pos or size... pity. See more in our litegraph.d.ts.
       LGraphCanvas.onShowPropertyEditor(
@@ -558,12 +570,12 @@ class Rgthree extends EventTarget {
    */
   private getRgthreeIContextMenuValues(): IContextMenuValue[] {
     const [canvas, graph] = [app.canvas as TLGraphCanvas, app.canvas.getCurrentGraph()!];
-    const selectedNodes = Object.values(canvas.selected_nodes || {});
+    const selectedNodes = Object.values(canvas.selected_nodes || {}) as LGraphNode[];
     let rerouteNodes: LGraphNode[] = [];
     if (selectedNodes.length) {
       rerouteNodes = selectedNodes.filter((n) => n.type === "Reroute");
     } else {
-      rerouteNodes = graph._nodes.filter((n) => n.type == "Reroute");
+      rerouteNodes = (graph._nodes as LGraphNode[]).filter((n) => n.type == "Reroute");
     }
     const rerouteLabel = selectedNodes.length ? "selected" : "all";
 
