@@ -26,6 +26,23 @@ const PROPERTY_SHOW_NAV = "showNav";
 const PROPERTY_SHOW_ALL_GRAPHS = "showAllGraphs";
 const PROPERTY_RESTRICTION = "toggleRestriction";
 
+function getGroupKey(group: LGraphGroup) {
+  if ((group as any)?.id != null) {
+    return `${group.graph?.id || "graph"}:${(group as any).id}`;
+  }
+  const pos = group._pos || group.pos || [0, 0];
+  const size = group._size || group.size || [0, 0];
+  return [
+    group.graph?.id || "graph",
+    group.title || "",
+    group.color || "",
+    Math.round(pos[0] || 0),
+    Math.round(pos[1] || 0),
+    Math.round(size[0] || 0),
+    Math.round(size[1] || 0),
+  ].join("|");
+}
+
 /**
  * Fast Muter implementation that looks for groups in the workflow and adds toggles to mute them.
  */
@@ -39,6 +56,8 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
   readonly modeOff: number = LiteGraph.NEVER;
 
   private debouncerTempWidth: number = 0;
+  private propertiesProxyInstalled = false;
+  private propertiesTarget: Record<string, unknown> = {};
   tempSize: Vector2 | null = null;
 
   // We don't need to serizalize since we'll just be checking group data on startup anyway
@@ -80,6 +99,7 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
     this.properties[PROPERTY_SORT] = "position";
     this.properties[PROPERTY_SORT_CUSTOM_ALPHA] = "";
     this.properties[PROPERTY_RESTRICTION] = "default";
+    this.installPropertiesProxy();
   }
 
   override onConstructed(): boolean {
@@ -89,10 +109,185 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
 
   override onAdded(graph: TLGraph): void {
     FAST_GROUPS_SERVICE.addFastGroupNode(this);
+    this.tempSize = [...this.size] as Vector2;
   }
 
   override onRemoved(): void {
     FAST_GROUPS_SERVICE.removeFastGroupNode(this);
+  }
+
+  override configure(info: ISerialisedNode): void {
+    super.configure(info);
+    this.installPropertiesProxy();
+    this.refreshWidgets();
+  }
+
+  private installPropertiesProxy() {
+    if (this.propertiesProxyInstalled) {
+      return;
+    }
+    const refreshProperties = new Set([
+      PROPERTY_MATCH_COLORS,
+      PROPERTY_MATCH_TITLE,
+      PROPERTY_SHOW_NAV,
+      PROPERTY_SHOW_ALL_GRAPHS,
+      PROPERTY_SORT,
+      PROPERTY_SORT_CUSTOM_ALPHA,
+      PROPERTY_RESTRICTION,
+    ]);
+    const wrapProperties = (properties: Record<string, unknown>) =>
+      new Proxy(properties || {}, {
+        set: (target, property, value) => {
+          const prevValue = (target as any)[property];
+          const result = Reflect.set(target, property, value);
+          if (
+            result &&
+            prevValue !== value &&
+            typeof property === "string" &&
+            refreshProperties.has(property)
+          ) {
+            queueMicrotask(() => {
+              this.refreshWidgets();
+              this.setDirtyCanvas(true, true);
+            });
+          }
+          return result;
+        },
+      });
+    this.propertiesTarget = wrapProperties((this.properties as Record<string, unknown>) || {});
+    Object.defineProperty(this, "properties", {
+      configurable: true,
+      enumerable: true,
+      get: () => this.propertiesTarget,
+      set: (value: Record<string, unknown>) => {
+        this.propertiesTarget = wrapProperties(value || {});
+        queueMicrotask(() => {
+          this.refreshWidgets();
+          this.setDirtyCanvas(true, true);
+        });
+      },
+    });
+    this.propertiesProxyInstalled = true;
+  }
+
+  override onPropertyChanged(property: string, value: unknown, prevValue?: unknown): boolean {
+    if (
+      [
+        PROPERTY_MATCH_COLORS,
+        PROPERTY_MATCH_TITLE,
+        PROPERTY_SHOW_NAV,
+        PROPERTY_SHOW_ALL_GRAPHS,
+        PROPERTY_SORT,
+        PROPERTY_SORT_CUSTOM_ALPHA,
+        PROPERTY_RESTRICTION,
+      ].includes(property)
+    ) {
+      this.refreshWidgets();
+      this.setDirtyCanvas(true, true);
+    }
+    return true;
+  }
+
+  override onShowCustomPanelInfo(panel: HTMLElement) {
+    panel.querySelector(".rgthree-fast-groups-settings")?.remove();
+
+    const section = document.createElement("div");
+    section.className = "rgthree-fast-groups-settings";
+    section.style.display = "grid";
+    section.style.gap = "12px";
+    section.style.marginTop = "12px";
+    section.style.paddingTop = "12px";
+    section.style.borderTop = "1px solid var(--border-color, rgba(255, 255, 255, 0.12))";
+
+    const title = document.createElement("div");
+    title.textContent = "rgthree 属性";
+    title.style.fontSize = "14px";
+    title.style.fontWeight = "600";
+    section.appendChild(title);
+
+    const addField = (labelText: string, control: HTMLElement) => {
+      const row = document.createElement("div");
+      row.style.display = "grid";
+      row.style.gap = "6px";
+
+      const label = document.createElement("div");
+      label.textContent = labelText;
+      label.style.fontSize = "12px";
+      label.style.opacity = "0.85";
+      row.appendChild(label);
+
+      row.appendChild(control);
+      section.appendChild(row);
+    };
+
+    const makeTextInput = (property: string) => {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = String(this.properties?.[property] ?? "");
+      input.style.width = "100%";
+      input.style.boxSizing = "border-box";
+      input.addEventListener("change", () => {
+        this.properties[property] = input.value;
+      });
+      return input;
+    };
+
+    const makeCheckbox = (property: string) => {
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = !!this.properties?.[property];
+      input.addEventListener("change", () => {
+        this.properties[property] = input.checked;
+      });
+      return input;
+    };
+
+    const makeSelect = (property: string, values: string[]) => {
+      const select = document.createElement("select");
+      select.style.width = "100%";
+      select.style.boxSizing = "border-box";
+      for (const value of values) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      }
+      select.value = String(this.properties?.[property] ?? values[0] ?? "");
+      select.addEventListener("change", () => {
+        this.properties[property] = select.value;
+        if (property === PROPERTY_SORT) {
+          customAlphaRow.style.opacity = select.value === "custom alphabet" ? "1" : "0.5";
+          customAlphaInput.disabled = select.value !== "custom alphabet";
+        }
+      });
+      return select;
+    };
+
+    addField("颜色匹配", makeTextInput(PROPERTY_MATCH_COLORS));
+    addField("标题匹配", makeTextInput(PROPERTY_MATCH_TITLE));
+    addField("显示导航", makeCheckbox(PROPERTY_SHOW_NAV));
+    addField("显示所有图表", makeCheckbox(PROPERTY_SHOW_ALL_GRAPHS));
+
+    const sortSelect = makeSelect(PROPERTY_SORT, ["position", "alphanumeric", "custom alphabet"]);
+    addField("排序", sortSelect);
+
+    const customAlphaRow = document.createElement("div");
+    customAlphaRow.style.display = "grid";
+    customAlphaRow.style.gap = "6px";
+    customAlphaRow.style.opacity = sortSelect.value === "custom alphabet" ? "1" : "0.5";
+    const customAlphaLabel = document.createElement("div");
+    customAlphaLabel.textContent = "自定义字母顺序";
+    customAlphaLabel.style.fontSize = "12px";
+    customAlphaLabel.style.opacity = "0.85";
+    customAlphaRow.appendChild(customAlphaLabel);
+    const customAlphaInput = makeTextInput(PROPERTY_SORT_CUSTOM_ALPHA);
+    customAlphaInput.disabled = sortSelect.value !== "custom alphabet";
+    customAlphaRow.appendChild(customAlphaInput);
+    section.appendChild(customAlphaRow);
+
+    addField("切换限制", makeSelect(PROPERTY_RESTRICTION, ["default", "max one", "always one"]));
+
+    panel.appendChild(section);
   }
 
   refreshWidgets() {
@@ -196,17 +391,21 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
       }
       let isDirty = false;
       const widgetLabel = `Enable ${group.title}`;
-      let widget = this.widgets.find((w) => w.label === widgetLabel) as FastGroupsToggleRowWidget;
+      const groupKey = getGroupKey(group);
+      let widget = this.widgets.find(
+        (w) => w instanceof FastGroupsToggleRowWidget && w.groupKey === groupKey,
+      ) as FastGroupsToggleRowWidget;
       if (!widget) {
         // When we add a widget, litegraph is going to mess up the size, so we
         // store it so we can retrieve it in computeSize. Hacky..
         this.tempSize = [...this.size] as Size;
         widget = this.addCustomWidget(
-          new FastGroupsToggleRowWidget(group, this),
+          new FastGroupsToggleRowWidget(group, this, groupKey),
         ) as FastGroupsToggleRowWidget;
         this.setSize(this.computeSize());
         isDirty = true;
       }
+      widget.group = group;
       if (widget.label != widgetLabel) {
         widget.label = widgetLabel;
         isDirty = true;
@@ -387,14 +586,38 @@ class FastGroupsToggleRowWidget extends RgthreeBaseWidget<{toggled: boolean}> {
   label: string = "";
   group: LGraphGroup;
   node: BaseFastGroupsModeChanger;
+  groupKey: string;
+  private layoutRefreshToken = 0;
 
-  constructor(group: LGraphGroup, node: BaseFastGroupsModeChanger) {
-    super("RGTHREE_TOGGLE_AND_NAV");
+  constructor(group: LGraphGroup, node: BaseFastGroupsModeChanger, groupKey: string) {
+    super(`RGTHREE_TOGGLE_AND_NAV:${groupKey}`);
     this.group = group;
     this.node = node;
+    this.groupKey = groupKey;
+  }
+
+  // Vue nodes re-sync on size changes. Use a sub-pixel width pulse so the UI can refresh
+  // without a visible 1px jitter.
+  private refreshVueNodeLayout() {
+    const originalSize = [...this.node.size] as Vector2;
+    const pulseSize = [originalSize[0] + 0.5, originalSize[1]] as Vector2;
+    requestAnimationFrame(() => {
+      this.node.setSize(pulseSize);
+      this.node.onResize?.(pulseSize);
+      requestAnimationFrame(() => {
+        this.node.setSize(originalSize);
+        this.node.onResize?.(originalSize);
+        this.node.setDirtyCanvas(true, true);
+        this.group.graph?.setDirtyCanvas(true, true);
+        app.canvas?.setDirty(true, true);
+      });
+    });
   }
 
   doModeChange(force?: boolean, skipOtherNodeCheck?: boolean) {
+    const liveGroup =
+      this.group.graph?._groups?.find((g) => getGroupKey(g) === this.groupKey) || this.group;
+    this.group = liveGroup;
     this.group.recomputeInsideNodes();
     const hasAnyActiveNodes = getGroupNodes(this.group).some((n) => n.mode === LiteGraph.ALWAYS);
     let newValue = force != null ? force : !hasAnyActiveNodes;
@@ -413,7 +636,42 @@ class FastGroupsToggleRowWidget extends RgthreeBaseWidget<{toggled: boolean}> {
     changeModeOfNodes(getGroupNodes(this.group), (newValue ? this.node.modeOn : this.node.modeOff));
     this.group.rgthree_hasAnyActiveNode = newValue;
     this.toggled = newValue;
-    this.group.graph?.setDirtyCanvas(true, false);
+    this.node.onWidgetChanged?.(this.label, newValue, !newValue, this as any);
+    this.node.widgets = [...this.node.widgets];
+    this.node.refreshWidgets();
+    this.refreshVueNodeLayout();
+    this.node.setDirtyCanvas(true, true);
+    this.group.graph?.setDirtyCanvas(true, true);
+    app.canvas?.setDirty(true, true);
+    const canvas = app.canvas as TLGraphCanvas;
+    const redrawCanvas = (targetCanvas?: TLGraphCanvas | null) => {
+      targetCanvas?.setDirty(true, true);
+      (targetCanvas as any)?.draw?.(true, true);
+    };
+    redrawCanvas(canvas);
+    if (canvas?.selected_nodes?.[this.node.id!]) {
+      canvas.deselectAll();
+      canvas.onSelectionChange?.();
+      requestAnimationFrame(() => {
+        const currentCanvas = app.canvas as TLGraphCanvas;
+        currentCanvas.selectNode(this.node, false);
+        currentCanvas.onSelectionChange?.();
+        redrawCanvas(currentCanvas);
+      });
+    } else {
+      queueMicrotask(() => {
+        canvas?.onSelectionChange?.();
+        redrawCanvas(canvas);
+      });
+    }
+    queueMicrotask(() => {
+      const graph = app.graph;
+      if (graph) {
+        const workflow = graph.serialize();
+        api.dispatchEvent(new CustomEvent("graphChanged", {detail: workflow}));
+        api.dispatchEvent(new CustomEvent("change_workflow", {detail: workflow}));
+      }
+    });
   }
 
   get toggled() {

@@ -1,4 +1,5 @@
 import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
 import { RgthreeBaseVirtualNode } from "./base_node.js";
 import { NodeTypesString } from "./constants.js";
 import { SERVICE as FAST_GROUPS_SERVICE } from "./services/fast_groups_service.js";
@@ -12,12 +13,31 @@ const PROPERTY_MATCH_TITLE = "matchTitle";
 const PROPERTY_SHOW_NAV = "showNav";
 const PROPERTY_SHOW_ALL_GRAPHS = "showAllGraphs";
 const PROPERTY_RESTRICTION = "toggleRestriction";
+function getGroupKey(group) {
+    var _a, _b;
+    if ((group === null || group === void 0 ? void 0 : group.id) != null) {
+        return `${((_a = group.graph) === null || _a === void 0 ? void 0 : _a.id) || "graph"}:${group.id}`;
+    }
+    const pos = group._pos || group.pos || [0, 0];
+    const size = group._size || group.size || [0, 0];
+    return [
+        ((_b = group.graph) === null || _b === void 0 ? void 0 : _b.id) || "graph",
+        group.title || "",
+        group.color || "",
+        Math.round(pos[0] || 0),
+        Math.round(pos[1] || 0),
+        Math.round(size[0] || 0),
+        Math.round(size[1] || 0),
+    ].join("|");
+}
 export class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
     constructor(title = FastGroupsMuter.title) {
         super(title);
         this.modeOn = LiteGraph.ALWAYS;
         this.modeOff = LiteGraph.NEVER;
         this.debouncerTempWidth = 0;
+        this.propertiesProxyInstalled = false;
+        this.propertiesTarget = {};
         this.tempSize = null;
         this.serialize_widgets = false;
         this.helpActions = "mute and unmute";
@@ -28,6 +48,7 @@ export class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
         this.properties[PROPERTY_SORT] = "position";
         this.properties[PROPERTY_SORT_CUSTOM_ALPHA] = "";
         this.properties[PROPERTY_RESTRICTION] = "default";
+        this.installPropertiesProxy();
     }
     onConstructed() {
         this.addOutput("OPT_CONNECTION", "*");
@@ -35,9 +56,166 @@ export class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
     }
     onAdded(graph) {
         FAST_GROUPS_SERVICE.addFastGroupNode(this);
+        this.tempSize = [...this.size];
     }
     onRemoved() {
         FAST_GROUPS_SERVICE.removeFastGroupNode(this);
+    }
+    configure(info) {
+        super.configure(info);
+        this.installPropertiesProxy();
+        this.refreshWidgets();
+    }
+    installPropertiesProxy() {
+        if (this.propertiesProxyInstalled) {
+            return;
+        }
+        const refreshProperties = new Set([
+            PROPERTY_MATCH_COLORS,
+            PROPERTY_MATCH_TITLE,
+            PROPERTY_SHOW_NAV,
+            PROPERTY_SHOW_ALL_GRAPHS,
+            PROPERTY_SORT,
+            PROPERTY_SORT_CUSTOM_ALPHA,
+            PROPERTY_RESTRICTION,
+        ]);
+        const wrapProperties = (properties) => new Proxy(properties || {}, {
+            set: (target, property, value) => {
+                const prevValue = target[property];
+                const result = Reflect.set(target, property, value);
+                if (result &&
+                    prevValue !== value &&
+                    typeof property === "string" &&
+                    refreshProperties.has(property)) {
+                    queueMicrotask(() => {
+                        this.refreshWidgets();
+                        this.setDirtyCanvas(true, true);
+                    });
+                }
+                return result;
+            },
+        });
+        this.propertiesTarget = wrapProperties(this.properties || {});
+        Object.defineProperty(this, "properties", {
+            configurable: true,
+            enumerable: true,
+            get: () => this.propertiesTarget,
+            set: (value) => {
+                this.propertiesTarget = wrapProperties(value || {});
+                queueMicrotask(() => {
+                    this.refreshWidgets();
+                    this.setDirtyCanvas(true, true);
+                });
+            },
+        });
+        this.propertiesProxyInstalled = true;
+    }
+    onPropertyChanged(property, value, prevValue) {
+        if ([
+            PROPERTY_MATCH_COLORS,
+            PROPERTY_MATCH_TITLE,
+            PROPERTY_SHOW_NAV,
+            PROPERTY_SHOW_ALL_GRAPHS,
+            PROPERTY_SORT,
+            PROPERTY_SORT_CUSTOM_ALPHA,
+            PROPERTY_RESTRICTION,
+        ].includes(property)) {
+            this.refreshWidgets();
+            this.setDirtyCanvas(true, true);
+        }
+        return true;
+    }
+    onShowCustomPanelInfo(panel) {
+        var _a;
+        (_a = panel.querySelector(".rgthree-fast-groups-settings")) === null || _a === void 0 ? void 0 : _a.remove();
+        const section = document.createElement("div");
+        section.className = "rgthree-fast-groups-settings";
+        section.style.display = "grid";
+        section.style.gap = "12px";
+        section.style.marginTop = "12px";
+        section.style.paddingTop = "12px";
+        section.style.borderTop = "1px solid var(--border-color, rgba(255, 255, 255, 0.12))";
+        const title = document.createElement("div");
+        title.textContent = "rgthree 属性";
+        title.style.fontSize = "14px";
+        title.style.fontWeight = "600";
+        section.appendChild(title);
+        const addField = (labelText, control) => {
+            const row = document.createElement("div");
+            row.style.display = "grid";
+            row.style.gap = "6px";
+            const label = document.createElement("div");
+            label.textContent = labelText;
+            label.style.fontSize = "12px";
+            label.style.opacity = "0.85";
+            row.appendChild(label);
+            row.appendChild(control);
+            section.appendChild(row);
+        };
+        const makeTextInput = (property) => {
+            var _a, _b;
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = String((_b = (_a = this.properties) === null || _a === void 0 ? void 0 : _a[property]) !== null && _b !== void 0 ? _b : "");
+            input.style.width = "100%";
+            input.style.boxSizing = "border-box";
+            input.addEventListener("change", () => {
+                this.properties[property] = input.value;
+            });
+            return input;
+        };
+        const makeCheckbox = (property) => {
+            var _a;
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.checked = !!((_a = this.properties) === null || _a === void 0 ? void 0 : _a[property]);
+            input.addEventListener("change", () => {
+                this.properties[property] = input.checked;
+            });
+            return input;
+        };
+        const makeSelect = (property, values) => {
+            var _a, _b, _c;
+            const select = document.createElement("select");
+            select.style.width = "100%";
+            select.style.boxSizing = "border-box";
+            for (const value of values) {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            }
+            select.value = String((_c = (_b = (_a = this.properties) === null || _a === void 0 ? void 0 : _a[property]) !== null && _b !== void 0 ? _b : values[0]) !== null && _c !== void 0 ? _c : "");
+            select.addEventListener("change", () => {
+                this.properties[property] = select.value;
+                if (property === PROPERTY_SORT) {
+                    customAlphaRow.style.opacity = select.value === "custom alphabet" ? "1" : "0.5";
+                    customAlphaInput.disabled = select.value !== "custom alphabet";
+                }
+            });
+            return select;
+        };
+        addField("颜色匹配", makeTextInput(PROPERTY_MATCH_COLORS));
+        addField("标题匹配", makeTextInput(PROPERTY_MATCH_TITLE));
+        addField("显示导航", makeCheckbox(PROPERTY_SHOW_NAV));
+        addField("显示所有图表", makeCheckbox(PROPERTY_SHOW_ALL_GRAPHS));
+        const sortSelect = makeSelect(PROPERTY_SORT, ["position", "alphanumeric", "custom alphabet"]);
+        addField("排序", sortSelect);
+        const customAlphaRow = document.createElement("div");
+        customAlphaRow.style.display = "grid";
+        customAlphaRow.style.gap = "6px";
+        customAlphaRow.style.opacity = sortSelect.value === "custom alphabet" ? "1" : "0.5";
+        const customAlphaLabel = document.createElement("div");
+        customAlphaLabel.textContent = "自定义字母顺序";
+        customAlphaLabel.style.fontSize = "12px";
+        customAlphaLabel.style.opacity = "0.85";
+        customAlphaRow.appendChild(customAlphaLabel);
+        const customAlphaInput = makeTextInput(PROPERTY_SORT_CUSTOM_ALPHA);
+        customAlphaInput.disabled = sortSelect.value !== "custom alphabet";
+        customAlphaRow.appendChild(customAlphaInput);
+        section.appendChild(customAlphaRow);
+        addField("切换限制", makeSelect(PROPERTY_RESTRICTION, ["default", "max one", "always one"]));
+        panel.appendChild(section);
     }
     refreshWidgets() {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j;
@@ -132,13 +310,15 @@ export class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
             }
             let isDirty = false;
             const widgetLabel = `Enable ${group.title}`;
-            let widget = this.widgets.find((w) => w.label === widgetLabel);
+            const groupKey = getGroupKey(group);
+            let widget = this.widgets.find((w) => w instanceof FastGroupsToggleRowWidget && w.groupKey === groupKey);
             if (!widget) {
                 this.tempSize = [...this.size];
-                widget = this.addCustomWidget(new FastGroupsToggleRowWidget(group, this));
+                widget = this.addCustomWidget(new FastGroupsToggleRowWidget(group, this, groupKey));
                 this.setSize(this.computeSize());
                 isDirty = true;
             }
+            widget.group = group;
             if (widget.label != widgetLabel) {
                 widget.label = widgetLabel;
                 isDirty = true;
@@ -306,36 +486,96 @@ FastGroupsMuter.type = NodeTypesString.FAST_GROUPS_MUTER;
 FastGroupsMuter.title = NodeTypesString.FAST_GROUPS_MUTER;
 FastGroupsMuter.exposedActions = ["Bypass all", "Enable all", "Toggle all"];
 class FastGroupsToggleRowWidget extends RgthreeBaseWidget {
-    constructor(group, node) {
-        super("RGTHREE_TOGGLE_AND_NAV");
+    constructor(group, node, groupKey) {
+        super(`RGTHREE_TOGGLE_AND_NAV:${groupKey}`);
         this.value = { toggled: false };
         this.options = { on: "yes", off: "no" };
         this.type = "custom";
         this.label = "";
+        this.layoutRefreshToken = 0;
         this.group = group;
         this.node = node;
+        this.groupKey = groupKey;
+    }
+    refreshVueNodeLayout() {
+        const originalSize = [...this.node.size];
+        const pulseSize = [originalSize[0] + 0.5, originalSize[1]];
+        requestAnimationFrame(() => {
+            var _a, _b;
+            this.node.setSize(pulseSize);
+            (_b = (_a = this.node).onResize) === null || _b === void 0 ? void 0 : _b.call(_a, pulseSize);
+            requestAnimationFrame(() => {
+                var _a, _b, _c, _d;
+                this.node.setSize(originalSize);
+                (_b = (_a = this.node).onResize) === null || _b === void 0 ? void 0 : _b.call(_a, originalSize);
+                this.node.setDirtyCanvas(true, true);
+                (_c = this.group.graph) === null || _c === void 0 ? void 0 : _c.setDirtyCanvas(true, true);
+                (_d = app.canvas) === null || _d === void 0 ? void 0 : _d.setDirty(true, true);
+            });
+        });
     }
     doModeChange(force, skipOtherNodeCheck) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        const liveGroup = ((_b = (_a = this.group.graph) === null || _a === void 0 ? void 0 : _a._groups) === null || _b === void 0 ? void 0 : _b.find((g) => getGroupKey(g) === this.groupKey)) || this.group;
+        this.group = liveGroup;
         this.group.recomputeInsideNodes();
         const hasAnyActiveNodes = getGroupNodes(this.group).some((n) => n.mode === LiteGraph.ALWAYS);
         let newValue = force != null ? force : !hasAnyActiveNodes;
         if (skipOtherNodeCheck !== true) {
-            if (newValue && ((_b = (_a = this.node.properties) === null || _a === void 0 ? void 0 : _a[PROPERTY_RESTRICTION]) === null || _b === void 0 ? void 0 : _b.includes(" one"))) {
+            if (newValue && ((_d = (_c = this.node.properties) === null || _c === void 0 ? void 0 : _c[PROPERTY_RESTRICTION]) === null || _d === void 0 ? void 0 : _d.includes(" one"))) {
                 for (const widget of this.node.widgets) {
                     if (widget instanceof FastGroupsToggleRowWidget) {
                         widget.doModeChange(false, true);
                     }
                 }
             }
-            else if (!newValue && ((_c = this.node.properties) === null || _c === void 0 ? void 0 : _c[PROPERTY_RESTRICTION]) === "always one") {
+            else if (!newValue && ((_e = this.node.properties) === null || _e === void 0 ? void 0 : _e[PROPERTY_RESTRICTION]) === "always one") {
                 newValue = this.node.widgets.every((w) => !w.value || w === this);
             }
         }
         changeModeOfNodes(getGroupNodes(this.group), (newValue ? this.node.modeOn : this.node.modeOff));
         this.group.rgthree_hasAnyActiveNode = newValue;
         this.toggled = newValue;
-        (_d = this.group.graph) === null || _d === void 0 ? void 0 : _d.setDirtyCanvas(true, false);
+        (_g = (_f = this.node).onWidgetChanged) === null || _g === void 0 ? void 0 : _g.call(_f, this.label, newValue, !newValue, this);
+        this.node.widgets = [...this.node.widgets];
+        this.node.refreshWidgets();
+        this.refreshVueNodeLayout();
+        this.node.setDirtyCanvas(true, true);
+        (_h = this.group.graph) === null || _h === void 0 ? void 0 : _h.setDirtyCanvas(true, true);
+        (_j = app.canvas) === null || _j === void 0 ? void 0 : _j.setDirty(true, true);
+        const canvas = app.canvas;
+        const redrawCanvas = (targetCanvas) => {
+            var _a;
+            targetCanvas === null || targetCanvas === void 0 ? void 0 : targetCanvas.setDirty(true, true);
+            (_a = targetCanvas === null || targetCanvas === void 0 ? void 0 : targetCanvas.draw) === null || _a === void 0 ? void 0 : _a.call(targetCanvas, true, true);
+        };
+        redrawCanvas(canvas);
+        if ((_k = canvas === null || canvas === void 0 ? void 0 : canvas.selected_nodes) === null || _k === void 0 ? void 0 : _k[this.node.id]) {
+            canvas.deselectAll();
+            (_l = canvas.onSelectionChange) === null || _l === void 0 ? void 0 : _l.call(canvas);
+            requestAnimationFrame(() => {
+                var _a;
+                const currentCanvas = app.canvas;
+                currentCanvas.selectNode(this.node, false);
+                (_a = currentCanvas.onSelectionChange) === null || _a === void 0 ? void 0 : _a.call(currentCanvas);
+                redrawCanvas(currentCanvas);
+            });
+        }
+        else {
+            queueMicrotask(() => {
+                var _a;
+                (_a = canvas === null || canvas === void 0 ? void 0 : canvas.onSelectionChange) === null || _a === void 0 ? void 0 : _a.call(canvas);
+                redrawCanvas(canvas);
+            });
+        }
+        queueMicrotask(() => {
+            const graph = app.graph;
+            if (graph) {
+                const workflow = graph.serialize();
+                api.dispatchEvent(new CustomEvent("graphChanged", { detail: workflow }));
+                api.dispatchEvent(new CustomEvent("change_workflow", { detail: workflow }));
+            }
+        });
     }
     get toggled() {
         return this.value.toggled;
