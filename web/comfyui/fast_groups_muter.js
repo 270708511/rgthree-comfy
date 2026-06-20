@@ -76,6 +76,8 @@ export class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
         this.debouncerTempWidth = 0;
         this.propertiesProxyInstalled = false;
         this.propertiesTarget = {};
+        this.vueRefreshBaseSize = null;
+        this.vueRefreshToken = 0;
         this.tempSize = null;
         this.serialize_widgets = false;
         this.helpActions = "mute and unmute";
@@ -176,12 +178,29 @@ export class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
         return true;
     }
     refreshVueNodeState() {
-        var _a, _b;
+        const baseSize = this.vueRefreshBaseSize || [...this.size];
+        this.vueRefreshBaseSize = baseSize;
+        const refreshToken = ++this.vueRefreshToken;
         this.widgets = [...(this.widgets || [])];
         const canvas = app.canvas;
-        (_a = canvas === null || canvas === void 0 ? void 0 : canvas.onSelectionChange) === null || _a === void 0 ? void 0 : _a.call(canvas);
-        canvas === null || canvas === void 0 ? void 0 : canvas.setDirty(true, true);
-        (_b = canvas === null || canvas === void 0 ? void 0 : canvas.draw) === null || _b === void 0 ? void 0 : _b.call(canvas, true, true);
+        requestAnimationFrame(() => {
+            if (refreshToken !== this.vueRefreshToken) {
+                return;
+            }
+            this.setSize([baseSize[0] + 0.5, baseSize[1]]);
+            canvas === null || canvas === void 0 ? void 0 : canvas.setDirty(true, true);
+            requestAnimationFrame(() => {
+                var _a, _b;
+                if (refreshToken !== this.vueRefreshToken) {
+                    return;
+                }
+                this.setSize([...baseSize]);
+                this.vueRefreshBaseSize = null;
+                (_a = canvas === null || canvas === void 0 ? void 0 : canvas.onSelectionChange) === null || _a === void 0 ? void 0 : _a.call(canvas);
+                canvas === null || canvas === void 0 ? void 0 : canvas.setDirty(true, true);
+                (_b = canvas === null || canvas === void 0 ? void 0 : canvas.draw) === null || _b === void 0 ? void 0 : _b.call(canvas, true, true);
+            });
+        });
         queueMicrotask(() => {
             const graph = app.graph;
             if (!graph) {

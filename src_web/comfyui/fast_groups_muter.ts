@@ -109,6 +109,8 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
   private debouncerTempWidth: number = 0;
   private propertiesProxyInstalled = false;
   private propertiesTarget: Record<string, unknown> = {};
+  private vueRefreshBaseSize: Vector2 | null = null;
+  private vueRefreshToken = 0;
   tempSize: Vector2 | null = null;
 
   // We don't need to serizalize since we'll just be checking group data on startup anyway
@@ -266,11 +268,28 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
   }
 
   private refreshVueNodeState() {
+    const baseSize = this.vueRefreshBaseSize || ([...this.size] as Vector2);
+    this.vueRefreshBaseSize = baseSize;
+    const refreshToken = ++this.vueRefreshToken;
     this.widgets = [...(this.widgets || [])];
     const canvas = app.canvas as TLGraphCanvas;
-    canvas?.onSelectionChange?.();
-    canvas?.setDirty(true, true);
-    (canvas as any)?.draw?.(true, true);
+    requestAnimationFrame(() => {
+      if (refreshToken !== this.vueRefreshToken) {
+        return;
+      }
+      this.setSize([baseSize[0] + 0.5, baseSize[1]] as Vector2);
+      canvas?.setDirty(true, true);
+      requestAnimationFrame(() => {
+        if (refreshToken !== this.vueRefreshToken) {
+          return;
+        }
+        this.setSize([...baseSize] as Vector2);
+        this.vueRefreshBaseSize = null;
+        canvas?.onSelectionChange?.();
+        canvas?.setDirty(true, true);
+        (canvas as any)?.draw?.(true, true);
+      });
+    });
     queueMicrotask(() => {
       const graph = app.graph;
       if (!graph) {
