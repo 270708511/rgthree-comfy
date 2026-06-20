@@ -26,6 +26,57 @@ const PROPERTY_SHOW_NAV = "showNav";
 const PROPERTY_SHOW_ALL_GRAPHS = "showAllGraphs";
 const PROPERTY_RESTRICTION = "toggleRestriction";
 
+interface LiteGraphPropertyPanel extends HTMLElement {
+  addWidget(
+    type: string,
+    name: string,
+    value: unknown,
+    options?: {label?: string; values?: string[]},
+    callback?: (name: string | undefined, value: unknown) => void,
+  ): HTMLElement;
+}
+
+function readPanelValue(value: unknown) {
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    if ("value" in record) {
+      return record.value;
+    }
+    if ("content" in record) {
+      return record.content;
+    }
+  }
+  return value;
+}
+
+function readStringPanelValue(value: unknown, fallback = "") {
+  const raw = readPanelValue(value);
+  if (raw == null) {
+    return fallback;
+  }
+  return String(raw);
+}
+
+function readBooleanPanelValue(value: unknown) {
+  const raw = readPanelValue(value);
+  if (typeof raw === "boolean") {
+    return raw;
+  }
+  if (typeof raw === "number") {
+    return raw !== 0;
+  }
+  if (typeof raw === "string") {
+    const normalized = raw.trim().toLowerCase();
+    if (["true", "1", "yes", "on", "开", "是"].includes(normalized)) {
+      return true;
+    }
+    if (["false", "0", "no", "off", "关", "否"].includes(normalized)) {
+      return false;
+    }
+  }
+  return !!raw;
+}
+
 function getGroupKey(group: LGraphGroup) {
   if ((group as any)?.id != null) {
     return `${group.graph?.id || "graph"}:${(group as any).id}`;
@@ -100,6 +151,7 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
     this.properties[PROPERTY_SORT_CUSTOM_ALPHA] = "";
     this.properties[PROPERTY_RESTRICTION] = "default";
     this.installPropertiesProxy();
+    this.normalizeProperties();
   }
 
   override onConstructed(): boolean {
@@ -119,7 +171,32 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
   override configure(info: ISerialisedNode): void {
     super.configure(info);
     this.installPropertiesProxy();
+    this.normalizeProperties();
     this.refreshWidgets();
+  }
+
+  private normalizeProperties() {
+    this.properties[PROPERTY_MATCH_COLORS] = readStringPanelValue(
+      this.properties?.[PROPERTY_MATCH_COLORS],
+      "",
+    );
+    this.properties[PROPERTY_MATCH_TITLE] = readStringPanelValue(
+      this.properties?.[PROPERTY_MATCH_TITLE],
+      "",
+    );
+    this.properties[PROPERTY_SHOW_NAV] = readBooleanPanelValue(this.properties?.[PROPERTY_SHOW_NAV]);
+    this.properties[PROPERTY_SHOW_ALL_GRAPHS] = readBooleanPanelValue(
+      this.properties?.[PROPERTY_SHOW_ALL_GRAPHS],
+    );
+    this.properties[PROPERTY_SORT] = readStringPanelValue(this.properties?.[PROPERTY_SORT], "position");
+    this.properties[PROPERTY_SORT_CUSTOM_ALPHA] = readStringPanelValue(
+      this.properties?.[PROPERTY_SORT_CUSTOM_ALPHA],
+      "",
+    );
+    this.properties[PROPERTY_RESTRICTION] = readStringPanelValue(
+      this.properties?.[PROPERTY_RESTRICTION],
+      "default",
+    );
   }
 
   private installPropertiesProxy() {
@@ -188,107 +265,92 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
     return true;
   }
 
-  override onShowCustomPanelInfo(panel: HTMLElement) {
-    panel.querySelector(".rgthree-fast-groups-settings")?.remove();
-
-    const section = document.createElement("div");
-    section.className = "rgthree-fast-groups-settings";
-    section.style.display = "grid";
-    section.style.gap = "12px";
-    section.style.marginTop = "12px";
-    section.style.paddingTop = "12px";
-    section.style.borderTop = "1px solid var(--border-color, rgba(255, 255, 255, 0.12))";
-
-    const title = document.createElement("div");
-    title.textContent = "rgthree 属性";
-    title.style.fontSize = "14px";
-    title.style.fontWeight = "600";
-    section.appendChild(title);
-
-    const addField = (labelText: string, control: HTMLElement) => {
-      const row = document.createElement("div");
-      row.style.display = "grid";
-      row.style.gap = "6px";
-
-      const label = document.createElement("div");
-      label.textContent = labelText;
-      label.style.fontSize = "12px";
-      label.style.opacity = "0.85";
-      row.appendChild(label);
-
-      row.appendChild(control);
-      section.appendChild(row);
-    };
-
-    const makeTextInput = (property: string) => {
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = String(this.properties?.[property] ?? "");
-      input.style.width = "100%";
-      input.style.boxSizing = "border-box";
-      input.addEventListener("change", () => {
-        this.properties[property] = input.value;
-      });
-      return input;
-    };
-
-    const makeCheckbox = (property: string) => {
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.checked = !!this.properties?.[property];
-      input.addEventListener("change", () => {
-        this.properties[property] = input.checked;
-      });
-      return input;
-    };
-
-    const makeSelect = (property: string, values: string[]) => {
-      const select = document.createElement("select");
-      select.style.width = "100%";
-      select.style.boxSizing = "border-box";
-      for (const value of values) {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = value;
-        select.appendChild(option);
+  private refreshVueNodeState() {
+    this.widgets = [...(this.widgets || [])];
+    const canvas = app.canvas as TLGraphCanvas;
+    canvas?.onSelectionChange?.();
+    canvas?.setDirty(true, true);
+    (canvas as any)?.draw?.(true, true);
+    queueMicrotask(() => {
+      const graph = app.graph;
+      if (!graph) {
+        return;
       }
-      select.value = String(this.properties?.[property] ?? values[0] ?? "");
-      select.addEventListener("change", () => {
-        this.properties[property] = select.value;
-        if (property === PROPERTY_SORT) {
-          customAlphaRow.style.opacity = select.value === "custom alphabet" ? "1" : "0.5";
-          customAlphaInput.disabled = select.value !== "custom alphabet";
-        }
-      });
-      return select;
-    };
-
-    addField("颜色匹配", makeTextInput(PROPERTY_MATCH_COLORS));
-    addField("标题匹配", makeTextInput(PROPERTY_MATCH_TITLE));
-    addField("显示导航", makeCheckbox(PROPERTY_SHOW_NAV));
-    addField("显示所有图表", makeCheckbox(PROPERTY_SHOW_ALL_GRAPHS));
-
-    const sortSelect = makeSelect(PROPERTY_SORT, ["position", "alphanumeric", "custom alphabet"]);
-    addField("排序", sortSelect);
-
-    const customAlphaRow = document.createElement("div");
-    customAlphaRow.style.display = "grid";
-    customAlphaRow.style.gap = "6px";
-    customAlphaRow.style.opacity = sortSelect.value === "custom alphabet" ? "1" : "0.5";
-    const customAlphaLabel = document.createElement("div");
-    customAlphaLabel.textContent = "自定义字母顺序";
-    customAlphaLabel.style.fontSize = "12px";
-    customAlphaLabel.style.opacity = "0.85";
-    customAlphaRow.appendChild(customAlphaLabel);
-    const customAlphaInput = makeTextInput(PROPERTY_SORT_CUSTOM_ALPHA);
-    customAlphaInput.disabled = sortSelect.value !== "custom alphabet";
-    customAlphaRow.appendChild(customAlphaInput);
-    section.appendChild(customAlphaRow);
-
-    addField("切换限制", makeSelect(PROPERTY_RESTRICTION, ["default", "max one", "always one"]));
-
-    panel.appendChild(section);
+      const workflow = graph.serialize();
+      api.dispatchEvent(new CustomEvent("graphChanged", {detail: workflow}));
+      api.dispatchEvent(new CustomEvent("change_workflow", {detail: workflow}));
+    });
   }
+
+  onAddPropertyToPanel(pName: string, panel: LiteGraphPropertyPanel): boolean {
+    const panelProperties = new Set([
+      PROPERTY_MATCH_COLORS,
+      PROPERTY_MATCH_TITLE,
+      PROPERTY_SHOW_NAV,
+      PROPERTY_SHOW_ALL_GRAPHS,
+      PROPERTY_SORT,
+      PROPERTY_SORT_CUSTOM_ALPHA,
+      PROPERTY_RESTRICTION,
+    ]);
+    if (!panelProperties.has(pName)) {
+      return false;
+    }
+
+    const labels: Record<string, string> = {
+      [PROPERTY_MATCH_COLORS]: "颜色匹配",
+      [PROPERTY_MATCH_TITLE]: "标题匹配",
+      [PROPERTY_SHOW_NAV]: "显示导航",
+      [PROPERTY_SHOW_ALL_GRAPHS]: "显示所有图表",
+      [PROPERTY_SORT]: "排序",
+      [PROPERTY_SORT_CUSTOM_ALPHA]: "自定义字母顺序",
+      [PROPERTY_RESTRICTION]: "切换限制",
+    };
+    const comboValues: Partial<Record<string, string[]>> = {
+      [PROPERTY_MATCH_COLORS]: [
+        "",
+        "black",
+        "blue",
+        "brown",
+        "cyan",
+        "green",
+        "pale_blue",
+        "pink",
+        "purple",
+        "red",
+        "yellow",
+      ],
+      [PROPERTY_SORT]: ["position", "alphanumeric", "custom alphabet"],
+      [PROPERTY_RESTRICTION]: ["default", "max one", "always one"],
+    };
+    const isBoolean = pName === PROPERTY_SHOW_NAV || pName === PROPERTY_SHOW_ALL_GRAPHS;
+    const values = comboValues[pName];
+    const type = isBoolean ? "boolean" : values ? "combo" : "string";
+    const value = isBoolean
+      ? readBooleanPanelValue(this.properties[pName])
+      : readStringPanelValue(this.properties[pName]);
+
+    panel.addWidget(
+      type,
+      pName,
+      value,
+      {label: labels[pName], ...(values ? {values} : {})},
+      (_name, nextValue) => {
+        const normalizedValue = isBoolean
+          ? readBooleanPanelValue(nextValue)
+          : readStringPanelValue(nextValue);
+        const graph = this.graph;
+        graph?.beforeChange(this);
+        this.setProperty(pName, normalizedValue);
+        graph?.afterChange();
+        this.refreshWidgets();
+        this.refreshVueNodeState();
+        this.setDirtyCanvas(true, true);
+        app.canvas?.setDirty(true, true);
+      },
+    );
+    return true;
+  }
+
 
   refreshWidgets() {
     const canvas = app.canvas as TLGraphCanvas;

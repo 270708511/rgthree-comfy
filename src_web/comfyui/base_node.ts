@@ -15,7 +15,7 @@ import {app} from "scripts/app.js";
 import {ComfyWidgets} from "scripts/widgets.js";
 import {SERVICE as KEY_EVENT_SERVICE} from "./services/key_events_services.js";
 import {LogLevel, rgthree} from "./rgthree.js";
-import {addHelpMenuItem} from "./utils.js";
+import {addHelpMenuItem, addMenuItemOnExtraMenuOptions} from "./utils.js";
 import {RgthreeHelpDialog} from "rgthree/common/dialog.js";
 import {
   importIndividualNodesInnerOnDragDrop,
@@ -301,6 +301,19 @@ export abstract class RgthreeBaseNode extends LGraphNode {
     parentGetExtraMenuOptions?.apply(this, [canvas, options]);
     const nodeTypeGetExtraMenuOptions = this.constructor.nodeType?.prototype?.getExtraMenuOptions;
     nodeTypeGetExtraMenuOptions?.apply(this, [canvas, options]);
+    addMenuItemOnExtraMenuOptions(
+      this,
+      {
+        name: "属性面板",
+        callback: () => {
+          const activeCanvas = canvas || (app.canvas as LGraphCanvas | undefined);
+          activeCanvas?.showShowNodePanel(this);
+        },
+      },
+      options,
+      "Shape",
+    );
+
     // If we have help content, then add a menu item.
     const help = this.getHelp() || (this.constructor as any).help;
     if (help) {
