@@ -487,6 +487,12 @@ export abstract class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
         isDirty = true;
       }
       widget.group = group;
+      // Keep the public widget name compatible with extensions that enumerate
+      // widgets to expose group controls. groupKey remains the internal identity.
+      if (widget.name != widgetLabel) {
+        widget.name = widgetLabel;
+        isDirty = true;
+      }
       if (widget.label != widgetLabel) {
         widget.label = widgetLabel;
         isDirty = true;
@@ -671,7 +677,7 @@ class FastGroupsToggleRowWidget extends RgthreeBaseWidget<{toggled: boolean}> {
   private layoutRefreshToken = 0;
 
   constructor(group: LGraphGroup, node: BaseFastGroupsModeChanger, groupKey: string) {
-    super(`RGTHREE_TOGGLE_AND_NAV:${groupKey}`);
+    super(`Enable ${group.title}`);
     this.group = group;
     this.node = node;
     this.groupKey = groupKey;

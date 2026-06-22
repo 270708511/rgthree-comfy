@@ -374,6 +374,10 @@ export class BaseFastGroupsModeChanger extends RgthreeBaseVirtualNode {
                 isDirty = true;
             }
             widget.group = group;
+            if (widget.name != widgetLabel) {
+                widget.name = widgetLabel;
+                isDirty = true;
+            }
             if (widget.label != widgetLabel) {
                 widget.label = widgetLabel;
                 isDirty = true;
@@ -542,7 +546,7 @@ FastGroupsMuter.title = NodeTypesString.FAST_GROUPS_MUTER;
 FastGroupsMuter.exposedActions = ["Bypass all", "Enable all", "Toggle all"];
 class FastGroupsToggleRowWidget extends RgthreeBaseWidget {
     constructor(group, node, groupKey) {
-        super(`RGTHREE_TOGGLE_AND_NAV:${groupKey}`);
+        super(`Enable ${group.title}`);
         this.value = { toggled: false };
         this.options = { on: "yes", off: "no" };
         this.type = "custom";
